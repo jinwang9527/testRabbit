@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/mvc
+       http://www.springframework.org/schema/mvc/spring-mvc.xsd
+       http://www.springframework.org/schema/aop
+       http://www.springframework.org/schema/aop/spring-aop.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <!--扫描properties配置文件-->
+    <context:property-placeholder location="classpath*:/*.properties"
+                                  ignore-resource-not-found="true" ignore-unresolvable="true"/>
+    <!--扫描包-->
+    <context:component-scan base-package="code"/>
+
+    <!--打开切面自动代理-->
+    <aop:aspectj-autoproxy proxy-target-class="true"/>
+
+    <!--  静态资源文件-->
+    <mvc:default-servlet-handler/>
+
+    <!--拦截器配置-->
+    <mvc:interceptors>
+        <!--跨域请求-->
+        <mvc:interceptor>
+            <mvc:mapping path="/**"/>
+            <bean class="code.common.filter.CorsInterceptor"/>
+        </mvc:interceptor>
+
+        <!-- 拦截前端请求，将token数据转换成token对象-->
+        <mvc:interceptor>
+            <mvc:mapping path="/**"/>
+            <bean class="code.common.filter.CorsInterceptor"/>
+        </mvc:interceptor>
+    </mvc:interceptors>
+
+
+    <!--将ResponseMsg对象转换成JSON格式的对象-->
+    <mvc:annotation-driven>
+        <mvc:message-converters>
+            <bean class="org.springframework.http.converter.StringHttpMessageConverter">
+                <property name="supportedMediaTypes">
+                    <list>
+                        <value>text/plain;charset=utf-8</value>
+                        <value>text/html;charset=utf-8</value>
+                    </list>
+                </property>
+            </bean>
+            <bean name="mappingJackson2HttpMessageConverter"
+                  class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+                <property name="supportedMediaTypes">
+                    <list>
+                        <value>application/json;charset=utf-8</value>
+                    </list>
+                </property>
+                <property name="objectMapper">
+                    <bean class="com.fasterxml.jackson.databind.ObjectMapper"/>
+                </property>
+            </bean>
+        </mvc:message-converters>
+    </mvc:annotation-driven>
+
+    <!--上传文件-->
+    <bean id="mutipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver"/>
+
+</beans>

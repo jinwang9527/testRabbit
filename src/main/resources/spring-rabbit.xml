@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <description>rabbitmq 连接服务配置</description>
+
+    <!--创建rabbit工厂-->
+    <bean id="rabbitConnectionFactory" class="com.rabbitmq.client.ConnectionFactory">
+        <property name="host" value="${mq.host}"/>
+        <property name="port" value="${mq.port}"/>
+        <property name="username" value="${mq.username}"/>
+        <property name="password" value="${mq.password}"/>
+    </bean>
+
+    <rabbit:connection-factory id="connectionFactory" connection-factory="rabbitConnectionFactory"/>
+
+    <!--2、创建rabbit 的管理类，rabbit的声明队列、声明交换器、绑定交换器，解绑交换器等操作都有admin类管理-->
+    <rabbit:admin id="rabbitAdmin" connection-factory="connectionFactory"/>
+
+    <!-- 3、生命队列-->
+    <rabbit:queue id="msnQueue" name="msnQueus"/>
+    <rabbit:queue id="msnQueueError" name="msnQueueError"/>
+
+    <!--4、创建交换机-->
+    <rabbit:direct-exchange id="taskExchange" name="taskExchange">
+        <rabbit:bindings>
+            <rabbit:binding queue="msnQueue" key="msnQueue"></rabbit:binding>
+            <rabbit:binding queue="msnQueueError" key="msnQueueError"></rabbit:binding>
+        </rabbit:bindings>
+    </rabbit:direct-exchange>
+
+
+    <!--5、创建任务交换器-->
+    <rabbit:template id="taskTemplate" connection-factory="connectionFactory" exchange="taskExchange"/>
+
+    <!-- 6、配置监听-->
+    <bean id="msnQueueListener" class="code.common.rabbitmq.MsnQueueListener"/>
+    <bean id="errorHandleListener" class="code.common.rabbitmq.ErrorHandleListener"/>
+
+
+    <!--7、 配置监听者到监听者容器-->
+    <rabbit:listener-container connection-factory="connectionFactory" acknowledge="manual" concurrency="2"
+                               max-concurrency="4" error-handler="errorHandleListener">
+        <rabbit:listener ref="msnQueueListener" queues="msnQueue"/>
+    </rabbit:listener-container>
+
+</beans>

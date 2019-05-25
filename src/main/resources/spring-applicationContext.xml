@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/tx
+       http://www.springframework.org/schema/tx/spring-tx.xsd
+       http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+    <!--1、配置连接池-->
+    <bean id="commonDataSourceMaster" class="com.alibaba.druid.pool.DruidDataSource" init-method="init"
+          destroy-method="close">
+        <!--数据源驱动类-->
+        <property name="driverClassName" value="${db.driverClassName}"/>
+        <!--url user password-->
+        <property name="url" value="${db.common.url}"/>
+        <property name="username" value="${db.common.username}"/>
+        <property name="password" value="${db.common.password}"/>
+
+        <!--连接池的初始化大小、最大、最小-->
+        <property name="initialSize" value="${db.common.initialSize}"/>
+        <property name="maxActive" value="${db.common.maxActive}"/>
+        <property name="minIdle" value="${db.common.minIdle}"/>
+
+        <!--获取连接等待超时时间-->
+        <property name="maxWait" value="${db.common.maxWait}"/>
+
+        <!--间隔多久检测一次需要关闭的连接 单位毫秒-->
+        <property name="timeBetweenEvictionRunsMillis" value="${db.common.timeBetweenEvictionRunsMillis}"/>
+
+        <!--一个连接在连接池最小生存时间-->
+        <property name="minEvictableIdleTimeMillis" value="${db.common.minEvictableIdleTimeMillis}"/>
+        <property name="validationQuery" value="select 1 "/>
+        <property name="testWhileIdle" value="true"/>
+        <property name="testOnBorrow" value="false"/>
+        <property name="testOnReturn" value="false"/>
+    </bean>
+
+    <!--分页插件-->
+    <bean id="pagePlugin" class="com.github.miemiedev.mybatis.paginator.OffsetLimitInterceptor">
+        <property name="dialectClass" value="com.github.miemiedev.mybatis.paginator.dialect.MySQLDialect"/>
+    </bean>
+
+    <!--配置sqlSessionFactory-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="commonDataSourceMaster"/>
+        <property name="mapperLocations" value="classpath*:mappers/**/*.xml"/>
+        <property name="typeAliasesPackage" value="code.repository.domain"/>
+        <property name="plugins">
+            <list>
+                <ref bean="pagePlugin"/>
+            </list>
+        </property>
+    </bean>
+
+    <!--扫描mapper-->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+        <property name="basePackage" value="code.repository.mapper"/>
+    </bean>
+
+    <!--定义事务（声明式事务）-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="commonDataSourceMaster"/>
+    </bean>
+
+</beans>
